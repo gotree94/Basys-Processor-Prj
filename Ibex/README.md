@@ -108,6 +108,9 @@ Ibex (req/gnt) ── ibex_axi_adapter ──> AXI4-Lite Interconnect
 
 ## 3. 코드 작성
 
+> **로드맵 #1~#10 실제 소스가 `sw/` 에 포함되어 있음.** 빌드/실행/트랩 설계는
+> [`sw/README.md`](sw/README.md) 참고. (`crt0.S` + `link.ld` + `app/app_*.c`)
+
 ### 3.1 req/gnt → AXI4-Lite 어댑터 (개념)
 ```systemverilog
 // instr 채널: 1비트 gnt -> AXI ARVALID, rvalid -> grant
