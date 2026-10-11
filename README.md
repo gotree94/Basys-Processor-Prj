@@ -10,11 +10,17 @@ Basys 3 (Artix-7 **XC7A35T-1CPG236C**) 보드에 **RISC-V 소프트코어**를 �
 ```
 Basys-Processor-Prj/
 ├── README.md              # (이 파일) 공통 개요 / 환경 / 로드맵
-├── NEORV32/README.md      # 코어별 전체 가이드
-├── VexRiscv/README.md
-├── PicoRV32/README.md
-└── Ibex/README.md
+├── NEORV32/
+│   ├── README.md           # 코어별 전체 가이드 (환경~검증)
+│   └── sw/                 # ★ 로드맵 #1~#10 실제 소스 + sw/README.md
+├── VexRiscv/{README.md, sw/}
+├── PicoRV32/{README.md, sw/}
+└── Ibex/{README.md, sw/}
 ```
+
+> **구현 현황:** 소프트웨어(`sw/`, 로드맵 #1~#10)는 4개 코어 모두 작성 완료.
+> **HDL 래퍼 / 제약(.xdc) / 테스트벤치(sim) / Vivado Tcl(scripts)** 는 아직 미작성
+> (아래 §7 참고).
 
 ---
 
@@ -68,6 +74,9 @@ Basys-Processor-Prj/
 
 > **권장 순서:** 1→2→3 을 먼저 "Hello World + 인터럽트"까지 완성한 뒤 나머지를 병렬 진행.
 > USB-HID host(12)는 FTDI/PHY 제약으로 **최후순위**.
+>
+> **소프트웨어 구현 범위:** `#1~#10` 데모를 4개 코어 `sw/` 에 작성 완료.
+> `#11 ExtMem`, `#12 USB` 는 소프트웨어 미구현(HDL 로드맵에만 계획 기재).
 
 ---
 
@@ -139,7 +148,7 @@ vivado -mode batch -source scripts\build.tcl
 - Pmod JA(top): `J1 L2 J2 K2 J3 K1 J4 K3`
 - VGA: R/G/B 4bit × 3 = 12, HS `P19`, VS `R19`
 - 7-seg: 세그먼트 + 자릿수 (anode)
-- 오디오: `A11` (PWM out)
+- PWM: Pmod `JA4` (Basys3 온보드 오디오 없음) — NEORV32/VexRiscv/PicoRV32/Ibex 공통
 - SW/BTN/LED: 표준 Basys3 마스터 XDC 참조
 
 > 정확한 핀은 Xilinx 공식 `Basys3_Master.xdc`를 복사해 사용 권장.
@@ -148,10 +157,10 @@ vivado -mode batch -source scripts\build.tcl
 
 ## 5. 공통 검증 전략
 
-1. **RTL 시뮬레이션** — 코어 + 주변장치 단위 테스트벤치 (`sim/`)
-2. **소프트웨어 단위 테스트** — UART로 pass/fail 출력
+1. **RTL 시뮬레이션** — 코어 + 주변장치 단위 테스트벤치 (`sim/`)  *(미작성)*
+2. **소프트웨어 단위 테스트** — UART로 pass/fail 출력 (`sw/` 내장, UART `a` 스모크 테스트)
 3. **보드 검증** — 로드맵 #마다 LED/UART로 상태 표시
-4. **회귀(regression)** — `make test` 로 전체 로드맵 스모크 테스트
+4. **회귀(regression)** — `sw/` 의 UART `a` 스모크 테스트 실행
 
 ---
 
@@ -159,9 +168,29 @@ vivado -mode batch -source scripts\build.tcl
 
 - [ ] M1: 환경설정 완료 (툴체인 + Vivado 배치 플로우)
 - [ ] M2: 코어 부팅 + UART "Hello"
-- [ ] M3: 로드맵 #1–3 (GPIO/UART/IRQ)
-- [ ] M4: 로드맵 #4–7 (SPI/I2C/PWM/7seg)
-- [ ] M5: 로드맵 #8–10 (VGA/DMA/PS2)
+- [x] M3: 로드맵 #1–3 (GPIO/UART/IRQ) — **소프트웨어 작성 완료**
+- [x] M4: 로드맵 #4–7 (SPI/I2C/PWM/7seg) — **소프트웨어 작성 완료**
+- [x] M5: 로드맵 #8–10 (VGA/DMA/PS2) — **소프트웨어 작성 완료**
 - [ ] M6: 로드맵 #11–12 (ExtMem/USB)
 
-코어별 상세는 각 디렉터리의 `README.md` 참고.
+> M3~M5 는 **소프트웨어**만 완료. HDL 래퍼/제약/시뮬/합성·보드 검증은 미완.
+
+---
+
+## 7. 구현 현황 / 다음 단계
+
+### 완료 (`sw/`, 4개 코어 공통)
+- 로드맵 **#1~#10** 데모: `main.c` 메뉴 + `app/app_*.c` (GPIO/UART/Timer-IRQ/SPI/I2C/PWM/7seg/VGA/DMA/PS2)
+- 스타트업/링커: `crt0.S`(VexRiscv·Ibex), `start.S`+`custom_ops.S`(PicoRV32), NEORV32 는 rte 라이브러리 사용
+- 빌드: `Makefile`(elf/bin/hex), `link.ld`, 미니 printf/`mem*`
+- 문서: 각 코어 `README.md` + `sw/README.md`
+
+### 미작성 (다음 단계)
+| 항목 | 내용 |
+|---|---|
+| `hdl/` | top 래퍼 + 주소 디코더/인터커넥트 + 커스텀 주변장치 RTL (7seg/VGA/PS2, PWM/DMA 등) |
+| `constrs/basys3.xdc` | 클럭/UART/Pmod/VGA/7seg/오디오 핀 제약 |
+| `sim/` | 코어 + 주변장치 단위 테스트벤치 |
+| `scripts/` | Vivado Tcl (`create_project.tcl`, `build.tcl`, `program.tcl`) |
+| `bitstream/` | 합성/구현 산출물 (.bit) |
+| 소프트웨어 | 로드맵 #11(ExtMem), #12(USB) |
