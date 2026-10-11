@@ -108,6 +108,9 @@ assign irq[2] = dma_done_irq;
 
 ## 3. 코드 작성
 
+> **로드맵 #1~#10 실제 소스가 `sw/` 에 포함되어 있음.** 빌드/실행/IRQ 설계는
+> [`sw/README.md`](sw/README.md) 참고. (`start.S` + `link.ld` + `app/app_*.c`)
+
 ### 3.1 스타트업 (`sw/start.S`)
 ```asm
 .section .text.start
